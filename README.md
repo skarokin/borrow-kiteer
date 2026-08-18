@@ -1,6 +1,8 @@
 # borrow-kiteer
 
-SDK for CRUD on per-user credentials for agent tools.
+SDK for CRUD on per-user credentials on agent tools.
+
+Agents act as a user against third-party APIs, but 
 
 `kiteer` supports OAuth and direct pasting of credentials, keyed by `user_id` sourced from your identity provider in a backend you already own. Tools get a helper method that attaches the credential at request time, and if nothing is stored yet, you get a URL to send back to the user. Your OAuth callbacks or credential-pasting endpoint get an easy, secure way to update a user's credentials for use in `kiteer`.
 
@@ -29,18 +31,20 @@ import kiteer
 from kiteer.stores import JSONStore # or your own custom implementation
 from my_auth_setup_module import github, openai
 
-# store = kiteer.from_store(dynamodb_store(table="my_table_name", region="us-west-2"))
 auth = kiteer.Auth(
     JSONStore(path="/credentials.json"),
     providers=[github, openai]
 )
 
+# bind identity at the edge from your IdP
+auth.bind(user_id="alice")
+
 def my_tool():
     # user_id is from YOUR trusted identity provider, ensure it's passed in securely via context variables, etc.
-    cred = store.get_credential(user_id="alice", provider="github")
+    cred = auth.get(provider="github")
     if cred.auth_invalid:
-      # you control how to handle invalid auth. typically, this would surface as an interrupt
-      return result.auth_link
+      # typically, this would be passed to your framework's interrupt primitive.
+      interrupt("github-auth", reason={"auth_link": cred.auth_link})
 
     # ... use credential ...
     api_client = some_api_client.get(cred.token)
