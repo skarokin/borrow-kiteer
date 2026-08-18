@@ -65,10 +65,12 @@ github = kiteer.oauth(
     client_id=...,
     client_secret=...,
     scopes=["repo"],
+    redirect_uri="https://auth.example.com/oauth/callback",
 )
 
 corp_resource = kiteer.paste(
-    name="corp_resource"
+    name="corp_resource",
+    callback_url="https://auth.example.com/paste",
 )
 ```
 
